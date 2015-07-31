@@ -1,2 +1,7 @@
 console.log('Hello World');
-window.alert("Test!");
+
+var filmography_section = $(".filmo-category-section")
+filmography_section.children().children("span").each(function (index) {
+	var year = $(this).text();
+	$(this).text("test " + year);
+})

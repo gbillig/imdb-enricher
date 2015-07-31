@@ -7,8 +7,11 @@
 	"permissions": [
 	 "storage", "*://imdb.com/*", "http://www.omdbapi.com/*"
 	],
+	"background": {
+		"scripts": ["jquery-2.1.4.min.js"]
+	},
 	"content_scripts": [ {
-		"js": [ "filmography.js" ],
+		"js": ["jquery-2.1.4.min.js", "filmography.js" ],
 		"run_at": "document_end",
 		"matches": [ "http://www.imdb.com/name/*"]
 	}]
