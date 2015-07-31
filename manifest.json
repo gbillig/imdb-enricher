@@ -1,0 +1,15 @@
+{
+	"manifest_version": 2,
+
+	"name": "Show IMDb rating in Filmography section",
+	"description": "Automatically adds the IMDb rating of each title in the Filmography section of each actor",
+	"version": "0.1",
+	"permissions": [
+	 "storage", "*://imdb.com/*", "http://www.omdbapi.com/*"
+	],
+	"content_scripts": [ {
+		"js": [ "filmography.js" ],
+		"run_at": "document_end",
+		"matches": [ "http://www.imdb.com/name/*"]
+	}]
+}
