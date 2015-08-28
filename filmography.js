@@ -15,11 +15,17 @@ filmography_section.children().each(function (index) {
 function makeApiCall(title, year, element) {
 	var rating =  10;
 	
-	var re = new RegExp(' ', 'g');
-    apikey = title.replace(re, "+");
-	
-	year = year.replace('\xa0', '');
-	
+	var title_re = new RegExp(' ', 'g');
+	apikey = title.replace(title_re, "+");
+
+	var year_re = new RegExp(/\d\d\d\d/);
+	year = year_re.exec(year);
+	if (year != null) {
+		year = year[0];
+	} else {
+		year = "";
+	}
+
 	var xmlHttp = new XMLHttpRequest();
 	var endpoint = 'http://www.omdbapi.com/?t=' + apikey + '&y=' + year + '&plot=short&r=json';
 
@@ -27,8 +33,12 @@ function makeApiCall(title, year, element) {
 		if (xmlHttp.readyState === XMLHttpRequest.DONE && xmlHttp.status === 200) {
 			var data = JSON.parse(xmlHttp.responseText);
 			rating = data.imdbRating;
+
+			if (rating == undefined) {
+				rating = "N/A";
+			}
 			
-			element.text(rating + '\xa0' + year);
+			element.html('<b>' + rating + '</b>\xa0' + year);
 		}
 	};
 	xmlHttp.open('GET', endpoint, true);
