@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 
 	"name": "IMDb Enricher",
-	"description": "Adds information various to IMDb pages. Currently, this extensions adds the IMDb rating of each title in the filmography section of each person.",
+	"description": "Adds the IMDb rating of each title in the filmography section of each person.",
 	"version": "0.2",
 	"permissions": [
 	 "storage", "*://imdb.com/*", "http://www.omdbapi.com/*"
