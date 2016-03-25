@@ -1,5 +1,3 @@
-console.log('Hello World');
-
 var filmography_section = $(".filmo-category-section")
 filmography_section.children().each(function (index) {
 	var year_span = $(this).children("span");
@@ -16,7 +14,7 @@ function makeApiCall(title, year, element) {
 	var rating =  10;
 	
 	var title_re = new RegExp(' ', 'g');
-	apikey = title.replace(title_re, "+");
+	enc_title = title.replace(title_re, "+");
 
 	var year_re = new RegExp(/\d\d\d\d/);
 	year = year_re.exec(year);
@@ -27,7 +25,7 @@ function makeApiCall(title, year, element) {
 	}
 
 	var xmlHttp = new XMLHttpRequest();
-	var endpoint = 'http://www.omdbapi.com/?t=' + apikey + '&y=' + year + '&plot=short&r=json';
+	var endpoint = 'http://www.omdbapi.com/?t=' + enc_title + '&y=' + year + '&plot=short&r=json';
 
 	xmlHttp.onreadystatechange = function() { 
 		if (xmlHttp.readyState === XMLHttpRequest.DONE && xmlHttp.status === 200) {
