@@ -7,8 +7,11 @@
 	"permissions": [
 	 "storage", "*://imdb.com/*", "http://www.omdbapi.com/*"
 	],
-	"icons": { 
-		"512": "imdb_enricher.png"
+	"icons": {
+		"32": "icons/icon_32.png", 
+		"48": "icons/icon_48.png", 
+		"128": "icons/icon_128.png", 
+		"512": "icons/icon_512.png"
 	},
 	"background": {
 		"scripts": ["jquery-2.1.4.min.js"]
