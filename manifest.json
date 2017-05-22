@@ -1,12 +1,18 @@
 {
 	"manifest_version": 2,
 
-	"name": "Show IMDb rating in Filmography section",
-	"description": "Automatically adds the IMDb rating of each title in the Filmography section of each actor",
-	"version": "0.1",
+	"name": "IMDb Enricher",
+	"description": "Adds the IMDb rating of each title in the filmography section of each person.",
+	"version": "0.2",
 	"permissions": [
 	 "storage", "*://imdb.com/*", "http://www.omdbapi.com/*"
 	],
+	"icons": {
+		"32": "icons/icon_32.png", 
+		"48": "icons/icon_48.png", 
+		"128": "icons/icon_128.png", 
+		"512": "icons/icon_512.png"
+	},
 	"background": {
 		"scripts": ["jquery-2.1.4.min.js"]
 	},

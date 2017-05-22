@@ -1,3 +1,3 @@
-# imdb_filmography_rating
-This is a Chrome Extension that adds information to each actor's IMDb page.
-Currently, the extension adds a section that shows the IMDb rating of each film in Filmography section.
+# imdb_enricher
+This is a Chrome Extension that adds information various IMDb pages.
+Currently, this extensions adds the IMDb rating of each title in the filmography section of each person.
