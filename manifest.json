@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 
 	"name": "IMDb Enricher",
-	"description": "Adds the IMDb rating of each title in the filmography section of each person.",
+	"description": "Adds the IMDb rating of each title to the corresponding row in the filmography section of each person.",
 	"version": "0.2",
 	"permissions": [
 	 "storage", "*://imdb.com/*", "http://www.omdbapi.com/*"
