@@ -1,17 +1,50 @@
-console.log('Hello World');
-
 var filmography_section = $(".filmo-category-section")
 filmography_section.children().each(function (index) {
-	var year_span = $(this).children("span");
-	var title =  $(this).children("b").children("a").text();
-	var year = year_span.text();
+	var year_elem = $(this).children("span");
+	var year = year_elem.text();
+	var film_elem = $(this).children("b").children("a");
+	var title = film_elem.text();
+	var title_url = film_elem.attr('href');
 	
-	makeApiCall(title, year, year_span);
-})
+	fetchRating(title_url, year, year_elem);
+	// makeApiCall(title, year, year_elem);
+});
 
 
-//http://www.omdbapi.com/?t=Maladies+&y=2012&plot=short&r=json
+/*
+ * This function fetches the page specified by the url parameter and parses
+ * the film's rating. The rating is then appended to the film's row.
+ */
+function fetchRating(url, year, element) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+		if (xmlHttp.readyState === XMLHttpRequest.DONE && xmlHttp.status === 200) {
+			var data = $.parseHTML(xmlHttp.responseText);
+			var rating = null;
+			$.each(data, function(index) {
+				var value_elem = $(this).find("div.ratingValue");
+				if (value_elem.length > 0) {
+					var value = value_elem.children("strong").children("span").text();
+					if (value != null) {
+						rating = value;
+					}
+				}
+			});
+			
+			if (rating != null) {
+				element.text(rating + '\xa0' + year);
+			}
+		}
+	};
+	
+	xmlHttp.open('GET',"http://www.imdb.com" + url, true);
+	xmlHttp.send();
+}
 
+/*
+ * This function uses the OMDb API to fetch film ratings.
+ * On May 9, 2017, OMDb API became private. This function is now depricated.
+ */
 function makeApiCall(title, year, element) {
 	var rating =  10;
 	
