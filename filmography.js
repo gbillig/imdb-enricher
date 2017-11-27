@@ -46,6 +46,7 @@ function fetchRating(url, year, element) {
  * On May 9, 2017, OMDb API became private. This function is now depricated.
  */
 function makeApiCall(title, year, element) {
+	var api_key = 'ab272ca2'
 	var rating =  10;
 	
 	var title_re = new RegExp(' ', 'g');
@@ -60,7 +61,12 @@ function makeApiCall(title, year, element) {
 	}
 
 	var xmlHttp = new XMLHttpRequest();
-	var endpoint = 'http://www.omdbapi.com/?t=' + enc_title + '&y=' + year + '&plot=short&r=json';
+	var base_url = 'http://www.omdbapi.com/'
+	var title_query_param = '?t=' + enc_title
+	var year_query_param = '&y=' + year
+	var format_query_param = '&plot=short&r=json'
+	var api_key_param = '&apikey=' + api_key
+	var endpoint = base_url + title_query_param + year_query_param + format_query_param + api_key_param
 
 	xmlHttp.onreadystatechange = function() { 
 		if (xmlHttp.readyState === XMLHttpRequest.DONE && xmlHttp.status === 200) {
