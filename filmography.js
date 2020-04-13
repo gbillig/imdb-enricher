@@ -37,7 +37,7 @@ function fetchRating(url, year, element) {
 		}
 	};
 	
-	xmlHttp.open('GET',"http://www.imdb.com" + url, true);
+	xmlHttp.open('GET',"https://www.imdb.com" + url, true);
 	xmlHttp.send();
 }
 
@@ -61,7 +61,7 @@ function makeApiCall(title, year, element) {
 	}
 
 	var xmlHttp = new XMLHttpRequest();
-	var base_url = 'http://www.omdbapi.com/'
+	var base_url = 'https://www.omdbapi.com/'
 	var title_query_param = '?t=' + enc_title
 	var year_query_param = '&y=' + year
 	var format_query_param = '&plot=short&r=json'
