@@ -1,14 +1,20 @@
-var filmography_section = $(".filmo-category-section")
-filmography_section.children().each(function (index) {
-  var year_elem = $(this).children("span");
-  var year = year_elem.text();
-  var film_elem = $(this).children("b").children("a");
-  var title = film_elem.text();
-  var url = film_elem.attr('href');
+chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
+  unogsToken = null;
+  if (response.result) {
+    unogsToken = response.result.token;
+  }
 
-  getRating(title, url, year, year_elem);
+  var filmography_section = $(".filmo-category-section")
+  filmography_section.children().each(function (index) {
+    var year_elem = $(this).children("span");
+    var year = year_elem.text();
+    var film_elem = $(this).children("b").children("a");
+    var title = film_elem.text();
+    var url = film_elem.attr('href');
+
+    getRating(title, url, year, year_elem);
+  });
 });
-
 
 function getRating(title, url, year, element) {
   var useOmdb = true;
@@ -18,7 +24,7 @@ function getRating(title, url, year, element) {
   } else {
     getRatingImdb(url, year, element);
   }
-  getNetflixCountries(title, element)
+  // getNetflixCountries(title, element)
 }
 
 /*
@@ -26,10 +32,10 @@ function getRating(title, url, year, element) {
  * Append the rating to the year row in the current page.
  */
 function getRatingImdb(url, year, element) {
-  var xmlHttp = new XMLHttpRequest();
-  xmlHttp.onreadystatechange = function() {
-    if (xmlHttp.readyState === XMLHttpRequest.DONE && xmlHttp.status === 200) {
-      var data = $.parseHTML(xmlHttp.responseText);
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      var data = $.parseHTML(xhr.responseText);
       var rating = null;
       $.each(data, function(index) {
         var value_elem = $(this).find("div.ratingValue");
@@ -47,8 +53,8 @@ function getRatingImdb(url, year, element) {
     }
   };
 
-  xmlHttp.open('GET',"https://www.imdb.com" + url, true);
-  xmlHttp.send();
+  xhr.open('GET',"https://www.imdb.com" + url, true);
+  xhr.send();
 }
 
 /*
@@ -71,7 +77,7 @@ function getRatingOmdb(title, year, element) {
     year = "";
   }
 
-  var xmlHttp = new XMLHttpRequest();
+  var xhr = new XMLHttpRequest();
   var base_url = 'https://www.omdbapi.com/'
   var title_query_param = '?t=' + enc_title
   var year_query_param = '&y=' + year
@@ -79,9 +85,9 @@ function getRatingOmdb(title, year, element) {
   var api_key_param = '&apikey=' + api_key
   var endpoint = base_url + title_query_param + year_query_param + format_query_param + api_key_param
 
-  xmlHttp.onreadystatechange = function() {
-    if (xmlHttp.readyState === XMLHttpRequest.DONE && xmlHttp.status === 200) {
-      var data = JSON.parse(xmlHttp.responseText);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
       rating = data.imdbRating;
 
       if (rating != undefined) {
@@ -89,24 +95,8 @@ function getRatingOmdb(title, year, element) {
       }
     }
   };
-  xmlHttp.open('GET', endpoint, true);
-  xmlHttp.send();
+  xhr.open('GET', endpoint, true);
+  xhr.send();
 }
 
-function getNetflixCountries(title, element) {
-  chrome.storage.local.get(['unogs_credentials'], function(result) {
-    if (isEmptyObject(result)) {
-      chrome.runtime.sendMessage({action: "getUnogsCrendentials"}, function(response) {
-        console.log(response.result);
-      });
-    }
-
-    console.log('Value currently is ' + result.key);
-  });
-
-  let a = 10;
-}
-
-function isEmptyObject(obj) {
-  return Object.keys(obj).length === 0 && obj.constructor === Object
-}
+function getNetflixCountries(title, element) {}
