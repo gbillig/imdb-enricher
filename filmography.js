@@ -4,15 +4,16 @@ chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
     unogsToken = response.result.token;
   }
 
-  var filmography_section = $(".filmo-category-section")
-  filmography_section.children().each(function (index) {
-    var year_elem = $(this).children("span");
-    var year = year_elem.text();
-    var film_elem = $(this).children("b").children("a");
-    var title = film_elem.text();
-    var url = film_elem.attr('href');
+  var filmographySection = $(".filmo-category-section")
+  filmographySection.children().each(function (index) {
+    var yearElement = $(this).children("span");
+    var year = yearElement.text();
+    var filmElement = $(this).children("b").children("a");
+    var title = filmElement.text();
+    var url = filmElement.attr('href');
 
-    getRating(title, url, year, year_elem);
+    getRating(title, url, year, yearElement);
+    getNetflixCountries(title, url, year, yearElement);
   });
 });
 
@@ -38,9 +39,9 @@ function getRatingImdb(url, year, element) {
       var data = $.parseHTML(xhr.responseText);
       var rating = null;
       $.each(data, function(index) {
-        var value_elem = $(this).find("div.ratingValue");
-        if (value_elem.length > 0) {
-          var value = value_elem.children("strong").children("span").text();
+        var ratingValueElement = $(this).find("div.ratingValue");
+        if (ratingValueElement.length > 0) {
+          var value = ratingValueElement.children("strong").children("span").text();
           if (value != null) {
             rating = value;
           }
@@ -63,14 +64,14 @@ function getRatingImdb(url, year, element) {
  * Note: the OMDb API was made private on May 9, 2017, and then subsequently was made public again on November 2, 2017.
  */
 function getRatingOmdb(title, year, element) {
-  var api_key = 'ab272ca2'
+  var omdbApiKey = 'ab272ca2'
   var rating = null;
 
-  var title_re = new RegExp(' ', 'g');
-  enc_title = title.replace(title_re, "+");
+  var titleRegex = new RegExp(' ', 'g');
+  encodedTitle = title.replace(titleRegex, "+");
 
-  var year_re = new RegExp(/\d\d\d\d/);
-  year = year_re.exec(year);
+  var yearRegex = new RegExp(/\d\d\d\d/);
+  year = yearRegex.exec(year);
   if (year != null) {
     year = year[0];
   } else {
@@ -78,12 +79,12 @@ function getRatingOmdb(title, year, element) {
   }
 
   var xhr = new XMLHttpRequest();
-  var base_url = 'https://www.omdbapi.com/'
-  var title_query_param = '?t=' + enc_title
-  var year_query_param = '&y=' + year
-  var format_query_param = '&plot=short&r=json'
-  var api_key_param = '&apikey=' + api_key
-  var endpoint = base_url + title_query_param + year_query_param + format_query_param + api_key_param
+  var baseUrl = 'https://www.omdbapi.com/'
+  var titleQueryParam = '?t=' + encodedTitle
+  var yearQueryParam = '&y=' + year
+  var formatQueryParam = '&plot=short&r=json'
+  var omdbApiKeyParam = '&apikey=' + omdbApiKey
+  var endpoint = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam
 
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
