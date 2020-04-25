@@ -11,9 +11,13 @@ chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
     var filmElement = $(this).children("b").children("a");
     var title = filmElement.text();
     var url = filmElement.attr('href');
+    imdbIdRegex = /\/title\/(tt.*)\//;
+    var matches = url.match(imdbIdRegex);
+    var imdbId = matches[1];
 
+    getNetflixId(title, imdbId, getNetflixCountries)
     getRating(title, url, year, yearElement);
-    getNetflixCountries(title, url, year, yearElement);
+    //getNetflixCountries(title, url, year, yearElement, unogsToken);
   });
 });
 
@@ -79,25 +83,49 @@ function getRatingOmdb(title, year, element) {
   }
 
   var xhr = new XMLHttpRequest();
-  var baseUrl = 'https://www.omdbapi.com/'
-  var titleQueryParam = '?t=' + encodedTitle
-  var yearQueryParam = '&y=' + year
-  var formatQueryParam = '&plot=short&r=json'
-  var omdbApiKeyParam = '&apikey=' + omdbApiKey
-  var endpoint = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam
+  var baseUrl = 'https://www.omdbapi.com/';
+  var titleQueryParam = '?t=' + encodedTitle;
+  var yearQueryParam = '&y=' + year;
+  var formatQueryParam = '&plot=short&r=json';
+  var omdbApiKeyParam = '&apikey=' + omdbApiKey;
+  var endpoint = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam;
 
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
       var data = JSON.parse(xhr.responseText);
       rating = data.imdbRating;
 
-      if (rating != undefined) {
+      if (rating != null) {
         element.html('<b>' + rating + '</b>\xa0' + year);
       }
     }
   };
+
   xhr.open('GET', endpoint, true);
   xhr.send();
 }
 
-function getNetflixCountries(title, element) {}
+function getNetflixId(title, imdbId, callback) {
+  // use the search endpoint to get the netflix id
+}
+
+function getNetflixCountries(netflixId, token, callback) {
+  var xhr = new XMLHttpRequest();
+  var baseUrl = "https://unogs.com/api/title/countries";
+  var url = baseUrl + '?netflixid=' + netflixId;
+  xhr.setRequestHeader('authorization', 'Bearer ' + token);
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      callback(JSON.parse(xhr.responseText);
+    }
+  };
+
+  xhr.open('GET', endpoint, true);
+  xhr.send();
+}
+
+function addFlag(data, element) {
+  var countryCode = "CA";
+  var flagUrl = "https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/2.7.0/flags/4x3/" + countryCode + ".svg"
+}
