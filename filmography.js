@@ -15,7 +15,9 @@ chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
     var matches = url.match(imdbIdRegex);
     var imdbId = matches[1];
 
-    getNetflixId(title, imdbId, getNetflixCountries)
+    getNetflixId(title, imdbId, unogsToken, (netflixId) => {
+      console.log(netflixId)
+    });
     getRating(title, url, year, yearElement);
     //getNetflixCountries(title, url, year, yearElement, unogsToken);
   });
@@ -82,14 +84,14 @@ function getRatingOmdb(title, year, element) {
     year = "";
   }
 
-  var xhr = new XMLHttpRequest();
   var baseUrl = 'https://www.omdbapi.com/';
   var titleQueryParam = '?t=' + encodedTitle;
   var yearQueryParam = '&y=' + year;
   var formatQueryParam = '&plot=short&r=json';
   var omdbApiKeyParam = '&apikey=' + omdbApiKey;
-  var endpoint = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam;
+  var url = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam;
 
+  var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
       var data = JSON.parse(xhr.responseText);
@@ -101,27 +103,49 @@ function getRatingOmdb(title, year, element) {
     }
   };
 
-  xhr.open('GET', endpoint, true);
+  xhr.open('GET', url, true);
   xhr.send();
 }
 
-function getNetflixId(title, imdbId, callback) {
-  // use the search endpoint to get the netflix id
+function getNetflixId(title, imdbId, token, callback) {
+  var baseUrl = "https://unogs.com/api/search";
+  var limit = 5;
+  var offset = 0;
+  var query = encodeURI(title);
+  var url = baseUrl + '?limit=' + limit + '&offset=' + offset + '&query=' + query;
+
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      searchResults = JSON.parse(xhr.responseText);
+      for (const searchResult in searchResults) {
+        if (searchResult["imdbid"] == imdbId) {
+          callback(searchResult["nfid"]);
+        }
+      }
+    }
+  };
+
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('authorization', 'Bearer ' + token);
+  // xhr.setRequestHeader('referer', 'https://unogs.com') // weird uNoGS API requirement
+  xhr.setRequestHeader('referrer', 'http://unogs.com') // weird uNoGS API requirement
+  xhr.send();
 }
 
 function getNetflixCountries(netflixId, token, callback) {
   var xhr = new XMLHttpRequest();
   var baseUrl = "https://unogs.com/api/title/countries";
   var url = baseUrl + '?netflixid=' + netflixId;
-  xhr.setRequestHeader('authorization', 'Bearer ' + token);
 
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-      callback(JSON.parse(xhr.responseText);
+      callback(JSON.parse(xhr.responseText));
     }
   };
 
-  xhr.open('GET', endpoint, true);
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('authorization', 'Bearer ' + token);
   xhr.send();
 }
 

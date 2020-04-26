@@ -31,7 +31,7 @@ function processUnogsResponse(data, sendResponse) {
 
     unogsCredentials = {
       token: token,
-      expirationDate: expirationDate
+      expirationTime: expirationDate.getTime()
     }
 
     chrome.storage.local.set({unogsCredentials: unogsCredentials}, null);
@@ -50,6 +50,22 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
+function isValidCredentials(crendentials) {
+  if (isEmptyObject(crendentials)) {
+    return false;
+  }
+
+  if (crendentials.token == null || crendentials.token === '') {
+    return false;
+  }
+
+  if (crendentials.expirationTime <= new Date().getTime()) {
+    return false;
+  }
+
+  return true;
+}
+
 function isEmptyObject(obj) {
   return Object.keys(obj).length === 0 && obj.constructor === Object
 }
@@ -62,10 +78,10 @@ function getUnogsToken(sendResponse) {
   chrome.storage.local.get(['unogsCredentials'], function(result) {
     crendentials = result.unogsCredentials;
 
-    if (isEmptyObject(crendentials)) {
-      requestUnogsToken(sendResponse);
-    } else {
+    if (isValidCredentials(crendentials)) {
       sendResponse({result: crendentials});
+    } else {
+      requestUnogsToken(sendResponse);
     }
   });
 }
