@@ -1,12 +1,39 @@
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    if (request.action == "getNetflixCountries") {
+      getUnogsToken(sendResponse);
+      getNetflixId(request.title, request.imdbId, getNetflixCountries)
+
+      return true;
+    }
+  }
+);
+
+/*
+ * Retrieve token from the Storage API
+ * Request a new token from uNoGS if none is found in the storage
+ */
+function getUnogsToken(callback) {
+  chrome.storage.local.get(['unogsCredentials'], function(result) {
+    crendentials = result.unogsCredentials;
+
+    if (isValidCredentials(crendentials)) {
+      callback(crendentials.token);
+    } else {
+      requestUnogsToken(callback);
+    }
+  });
+}
+
 /*
  * Make a request to get token from uNoGS authentication endpoint
  */
-function requestUnogsToken(sendResponse) {
+function requestUnogsToken(callback) {
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
       data = JSON.parse(xhr.responseText)
-      processUnogsResponse(data, sendResponse)
+      processUnogsResponse(data, callback)
     }
   };
 
@@ -22,7 +49,7 @@ function requestUnogsToken(sendResponse) {
  *  - store the token via the Storage API
  *  - send response to the message with the token
  */
-function processUnogsResponse(data, sendResponse) {
+function processUnogsResponse(data, callback) {
   token = data["token"]["access_token"];
 
   if (token) {
@@ -35,20 +62,54 @@ function processUnogsResponse(data, sendResponse) {
     }
 
     chrome.storage.local.set({unogsCredentials: unogsCredentials}, null);
-    sendResponse({result: unogsCredentials});
+    callback(token);
   } else {
-    sendResponse({result: null});
+    callback(null);
   }
 }
 
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.action == "getUnogsToken") {
-      getUnogsToken(sendResponse);
-      return true;
+
+function getNetflixId(title, imdbId, token, callback) {
+  var baseUrl = "https://unogs.com/api/search";
+  var limit = 5;
+  var offset = 0;
+  var query = encodeURI(title);
+  var url = baseUrl + '?limit=' + limit + '&offset=' + offset + '&query=' + query;
+
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      searchResults = JSON.parse(xhr.responseText);
+      for (const searchResult in searchResults) {
+        if (searchResult["imdbid"] == imdbId) {
+          callback(searchResult["nfid"]);
+        }
+      }
     }
-  }
-);
+  };
+
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('authorization', 'Bearer ' + token);
+  // xhr.setRequestHeader('referer', 'https://unogs.com') // weird uNoGS API requirement
+  xhr.setRequestHeader('referrer', 'http://unogs.com') // weird uNoGS API requirement
+  xhr.send();
+}
+
+function getNetflixCountries(netflixId, token, callback) {
+  var xhr = new XMLHttpRequest();
+  var baseUrl = "https://unogs.com/api/title/countries";
+  var url = baseUrl + '?netflixid=' + netflixId;
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      callback(JSON.parse(xhr.responseText));
+    }
+  };
+
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('authorization', 'Bearer ' + token);
+  xhr.send();
+}
 
 function isValidCredentials(crendentials) {
   if (isEmptyObject(crendentials)) {
@@ -68,20 +129,4 @@ function isValidCredentials(crendentials) {
 
 function isEmptyObject(obj) {
   return Object.keys(obj).length === 0 && obj.constructor === Object
-}
-
-/*
- * Retrieve token from the Storage API
- * Request a new token from uNoGS if none is found in the storage
- */
-function getUnogsToken(sendResponse) {
-  chrome.storage.local.get(['unogsCredentials'], function(result) {
-    crendentials = result.unogsCredentials;
-
-    if (isValidCredentials(crendentials)) {
-      sendResponse({result: crendentials});
-    } else {
-      requestUnogsToken(sendResponse);
-    }
-  });
 }

@@ -1,26 +1,34 @@
+var filmographySection = $(".filmo-category-section")
+filmographySection.children().each(function (index) {
+  var yearElement = $(this).children("span");
+  var year = yearElement.text();
+  var filmElement = $(this).children("b").children("a");
+  var title = filmElement.text();
+  var url = filmElement.attr('href');
+  imdbIdRegex = /\/title\/(tt.*)\//;
+  var matches = url.match(imdbIdRegex);
+  var imdbId = matches[1];
+
+  message = {
+    action: "getNetflixCountries",
+    imdbId: imdbId,
+    title: title,
+  }
+  chrome.runtime.sendMessage(message, function(response) { console.log(response) });
+});
+
+
 chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
   unogsToken = null;
   if (response.result) {
     unogsToken = response.result.token;
   }
 
-  var filmographySection = $(".filmo-category-section")
-  filmographySection.children().each(function (index) {
-    var yearElement = $(this).children("span");
-    var year = yearElement.text();
-    var filmElement = $(this).children("b").children("a");
-    var title = filmElement.text();
-    var url = filmElement.attr('href');
-    imdbIdRegex = /\/title\/(tt.*)\//;
-    var matches = url.match(imdbIdRegex);
-    var imdbId = matches[1];
-
-    getNetflixId(title, imdbId, unogsToken, (netflixId) => {
-      console.log(netflixId)
-    });
-    getRating(title, url, year, yearElement);
-    //getNetflixCountries(title, url, year, yearElement, unogsToken);
+  getNetflixId(title, imdbId, unogsToken, (netflixId) => {
+    console.log(netflixId)
   });
+  getRating(title, url, year, yearElement);
+  //getNetflixCountries(title, url, year, yearElement, unogsToken);
 });
 
 function getRating(title, url, year, element) {
@@ -107,47 +115,6 @@ function getRatingOmdb(title, year, element) {
   xhr.send();
 }
 
-function getNetflixId(title, imdbId, token, callback) {
-  var baseUrl = "https://unogs.com/api/search";
-  var limit = 5;
-  var offset = 0;
-  var query = encodeURI(title);
-  var url = baseUrl + '?limit=' + limit + '&offset=' + offset + '&query=' + query;
-
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-      searchResults = JSON.parse(xhr.responseText);
-      for (const searchResult in searchResults) {
-        if (searchResult["imdbid"] == imdbId) {
-          callback(searchResult["nfid"]);
-        }
-      }
-    }
-  };
-
-  xhr.open('GET', url, true);
-  xhr.setRequestHeader('authorization', 'Bearer ' + token);
-  // xhr.setRequestHeader('referer', 'https://unogs.com') // weird uNoGS API requirement
-  xhr.setRequestHeader('referrer', 'http://unogs.com') // weird uNoGS API requirement
-  xhr.send();
-}
-
-function getNetflixCountries(netflixId, token, callback) {
-  var xhr = new XMLHttpRequest();
-  var baseUrl = "https://unogs.com/api/title/countries";
-  var url = baseUrl + '?netflixid=' + netflixId;
-
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-      callback(JSON.parse(xhr.responseText));
-    }
-  };
-
-  xhr.open('GET', url, true);
-  xhr.setRequestHeader('authorization', 'Bearer ' + token);
-  xhr.send();
-}
 
 function addFlag(data, element) {
   var countryCode = "CA";
