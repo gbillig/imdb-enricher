@@ -17,10 +17,17 @@
 	  }
 	},
 	"background": {
-		"scripts": ["background.js"]
+		"scripts": [
+      "browser-polyfill.js",
+			"background.js"
+		]
 	},
 	"content_scripts": [{
-		"js": ["jquery-2.1.4.min.js", "filmography.js"],
+		"js": [
+      "browser-polyfill.js",
+      "jquery-2.1.4.min.js",
+      "filmography.js"
+		],
 		"run_at": "document_end",
 		"matches": ["https://www.imdb.com/name/*"]
 	}]
