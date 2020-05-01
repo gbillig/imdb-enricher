@@ -1,34 +1,78 @@
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.action == "getNetflixCountries") {
-      getUnogsToken(sendResponse);
-      getNetflixId(request.title, request.imdbId, getNetflixCountries)
-
-      return true;
+browser.runtime.onMessage.addListener(
+  function(message, sender, response) {
+    if (message.action == "getNetflixCountries") {
+      return getNetflixCountries(message, sender, response);
     }
   }
 );
 
-/*
- * Retrieve token from the Storage API
- * Request a new token from uNoGS if none is found in the storage
- */
-function getUnogsToken(callback) {
-  chrome.storage.local.get(['unogsCredentials'], function(result) {
-    crendentials = result.unogsCredentials;
+function getNetflixCountries(message, sender, response) {
+  var promise = getUnogsToken()
+  .then(function(token) {
+    return getNetflixId(token, message);
+  })
+  .then(function(netflixId, token) {
+    return getNetflixCountriesFromUnogs(netflixId, token)
+  })
+  .catch(function(err) {
+    console.log('getNetflixCountries error');
+    console.error(err);
+  });
 
-    if (isValidCredentials(crendentials)) {
-      callback(crendentials.token);
-    } else {
-      requestUnogsToken(callback);
-    }
+  // getNetflixId(message.title, message.imdbId, getNetflixCountries)
+
+  return promise;
+}
+
+/*
+ * Get a valid uNoGS token:
+ *   - first try to get a token from Storage.
+ *   - otherwise fetch a new token from uNoGS
+ */
+function getUnogsToken() {
+  browser.storage.local.get(['unogsCredentials'])
+  .then(function(credentials) {
+    return processUnogsCredentials(credentials);
+  })
+  .catch((err) => {
+    console.log('refreshUnogsToken error');
+    console.error(err)
   });
 }
 
 /*
+ * Return token from Storage if it's valid. Otherwise request a new token.
+ */
+function processUnogsCredentials(object) {
+  credentials = object.unogsCredentials;
+
+  if (isValidCredentials(credentials)) {
+    return credentials.token;
+  }
+
+  var promise = requestUnogsToken()
+  .then(function(token) {
+
+  })
+
+  return promise;
+}
+
+/*
+ * Make a request to get token from uNoGS authentication endpoint.
+ */
+function requestUnogsToken() {
+  currDate = new Date();
+  url = 'http://unogs.com/api/user?user_name=' + currDate / 10
+
+  return fetch(url, {method: 'POST'});
+}
+
+/*
+ * @depricated - use the promise version of this function
  * Make a request to get token from uNoGS authentication endpoint
  */
-function requestUnogsToken(callback) {
+function requestUnogsTokenCallback() {
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -45,6 +89,7 @@ function requestUnogsToken(callback) {
 }
 
 /*
+ * @depricated - use the promise version of this function
  * Process uNoGS response:
  *  - store the token via the Storage API
  *  - send response to the message with the token
@@ -61,7 +106,7 @@ function processUnogsResponse(data, callback) {
       expirationTime: expirationDate.getTime()
     }
 
-    chrome.storage.local.set({unogsCredentials: unogsCredentials}, null);
+    browser.storage.local.set({unogsCredentials: unogsCredentials});
     callback(token);
   } else {
     callback(null);
@@ -95,7 +140,7 @@ function getNetflixId(title, imdbId, token, callback) {
   xhr.send();
 }
 
-function getNetflixCountries(netflixId, token, callback) {
+function getNetflixCountriesFromUnogs(netflixId, token, callback) {
   var xhr = new XMLHttpRequest();
   var baseUrl = "https://unogs.com/api/title/countries";
   var url = baseUrl + '?netflixid=' + netflixId;
@@ -111,16 +156,16 @@ function getNetflixCountries(netflixId, token, callback) {
   xhr.send();
 }
 
-function isValidCredentials(crendentials) {
-  if (isEmptyObject(crendentials)) {
+function isValidCredentials(credentials) {
+  if (isEmptyObject(credentials)) {
     return false;
   }
 
-  if (crendentials.token == null || crendentials.token === '') {
+  if (credentials.token == null || credentials.token === '') {
     return false;
   }
 
-  if (crendentials.expirationTime <= new Date().getTime()) {
+  if (credentials.expirationTime <= new Date().getTime()) {
     return false;
   }
 

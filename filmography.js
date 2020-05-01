@@ -14,11 +14,19 @@ filmographySection.children().each(function (index) {
     imdbId: imdbId,
     title: title,
   }
-  chrome.runtime.sendMessage(message, function(response) { console.log(response) });
+
+  browser.runtime.sendMessage(message)
+  .then(function(response) {
+    console.log(response);
+  })
+  .catch((err) => {
+    console.log('sendMessage error (getNetflixCountries)');
+    console.error(err);
+  });
 });
 
-
-chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
+browser.runtime.sendMessage({action: "getUnogsToken"})
+.then(function(response) {
   unogsToken = null;
   if (response.result) {
     unogsToken = response.result.token;
@@ -29,6 +37,10 @@ chrome.runtime.sendMessage({action: "getUnogsToken"}, function(response) {
   });
   getRating(title, url, year, yearElement);
   //getNetflixCountries(title, url, year, yearElement, unogsToken);
+})
+.catch((err) => {
+  console.log('sendMessage error (getUnogsToken)');
+  console.error(err);
 });
 
 function getRating(title, url, year, element) {
