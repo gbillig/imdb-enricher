@@ -25,24 +25,6 @@ filmographySection.children().each(function (index) {
   });
 });
 
-browser.runtime.sendMessage({action: "getUnogsToken"})
-.then(function(response) {
-  unogsToken = null;
-  if (response.result) {
-    unogsToken = response.result.token;
-  }
-
-  getNetflixId(title, imdbId, unogsToken, (netflixId) => {
-    console.log(netflixId)
-  });
-  getRating(title, url, year, yearElement);
-  //getNetflixCountries(title, url, year, yearElement, unogsToken);
-})
-.catch((err) => {
-  console.log('sendMessage error (getUnogsToken)');
-  console.error(err);
-});
-
 function getRating(title, url, year, element) {
   var useOmdb = true;
 

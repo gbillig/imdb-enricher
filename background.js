@@ -1,7 +1,8 @@
 browser.runtime.onMessage.addListener(
   function(message, sender, response) {
     if (message.action == "getNetflixCountries") {
-      return getNetflixCountries(message, sender, response);
+      return getUnogsToken();
+      //return getNetflixCountries(message, sender, response);
     }
   }
 );
@@ -30,7 +31,7 @@ function getNetflixCountries(message, sender, response) {
  *   - otherwise fetch a new token from uNoGS
  */
 function getUnogsToken() {
-  browser.storage.local.get(['unogsCredentials'])
+  promise = browser.storage.local.get(['unogsCredentials'])
   .then(function(credentials) {
     return processUnogsCredentials(credentials);
   })
@@ -38,6 +39,8 @@ function getUnogsToken() {
     console.log('refreshUnogsToken error');
     console.error(err)
   });
+
+  return promise;
 }
 
 /*
@@ -51,9 +54,13 @@ function processUnogsCredentials(object) {
   }
 
   var promise = requestUnogsToken()
-  .then(function(token) {
-
+  .then(function(response) {
+    return processUnogsResponse(response);
   })
+  .catch((err) => {
+    console.log("processUnogsCredentials error");
+    console.error(err);
+  });
 
   return promise;
 }
@@ -65,54 +72,44 @@ function requestUnogsToken() {
   currDate = new Date();
   url = 'http://unogs.com/api/user?user_name=' + currDate / 10
 
-  return fetch(url, {method: 'POST'});
+  var promise = fetch(url, {method: 'POST'})
+  .then(function(response) {
+    return response.json();
+  })
+  .catch((err) => {
+    console.log('requestUnogsToken error');
+    console.err(err);
+  });
+
+  return promise;
 }
 
-/*
- * @depricated - use the promise version of this function
- * Make a request to get token from uNoGS authentication endpoint
- */
-function requestUnogsTokenCallback() {
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-      data = JSON.parse(xhr.responseText)
-      processUnogsResponse(data, callback)
-    }
-  };
-
-  currDate = new Date();
-  url = 'http://unogs.com/api/user?user_name=' + currDate / 10
-  xhr.open("POST", url, true); // false would makes this a synchronous request
-  // xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-  xhr.send();
-}
-
-/*
- * @depricated - use the promise version of this function
- * Process uNoGS response:
- *  - store the token via the Storage API
- *  - send response to the message with the token
- */
-function processUnogsResponse(data, callback) {
+function processUnogsResponse(data) {
   token = data["token"]["access_token"];
 
-  if (token) {
-    currDate = new Date();
-    expirationDate = new Date(currDate.getTime() + 1000 * 60 * 60 * 24 - 1000 * 15);
-
-    unogsCredentials = {
-      token: token,
-      expirationTime: expirationDate.getTime()
-    }
-
-    browser.storage.local.set({unogsCredentials: unogsCredentials});
-    callback(token);
-  } else {
-    callback(null);
+  if (!token) {
+    throw new Error('Invalid token returned from uNoGS');
   }
-}
 
+  currDate = new Date();
+  expirationDate = new Date(currDate.getTime() + 1000 * 60 * 60 * 24 - 1000 * 15);
+
+  unogsCredentials = {
+    token: token,
+    expirationTime: expirationDate.getTime()
+  }
+
+  var promise = browser.storage.local.set({unogsCredentials: unogsCredentials})
+  .then(function() {
+    return token;
+  })
+  .catch((err) => {
+    console.log("processUnogsResponse error");
+    console.error(err);
+  });
+
+  return promise;
+}
 
 function getNetflixId(title, imdbId, token, callback) {
   var baseUrl = "https://unogs.com/api/search";
