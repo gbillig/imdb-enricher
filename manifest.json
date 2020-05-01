@@ -3,7 +3,7 @@
   "name": "IMDb Enricher",
   "description": "Adds the IMDb rating of each title to the corresponding row in the filmography section of each person.",
   "version": "0.4",
-  "permissions": ["storage", "*://imdb.com/*", "https://www.omdbapi.com/*", "*://unogs.com/*"],
+  "permissions": ["storage", "*://imdb.com/*", "https://www.omdbapi.com/*", "http://unogs.com/*", "https://unogs.com/*"],
   "icons": {
     "32": "icons/icon_32.png", 
     "48": "icons/icon_48.png", 

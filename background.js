@@ -1,18 +1,23 @@
 browser.runtime.onMessage.addListener(
   function(message, sender, response) {
     if (message.action == "getNetflixCountries") {
-      return getUnogsToken();
-      //return getNetflixCountries(message, sender, response);
+      return getNetflixCountries(message, sender, response);
     }
   }
 );
 
 function getNetflixCountries(message, sender, response) {
+  var token = null;
+
   var promise = getUnogsToken()
-  .then(function(token) {
-    return getNetflixId(token, message);
+  .then(function(unogsToken) {
+    token = unogsToken;
+    return getNetflixId(message.title, message.imdbId, token);
   })
-  .then(function(netflixId, token) {
+  .then(function(response) {
+    return processSearchResponse(response, message.imdbId);
+  })
+  .then(function(netflixId) {
     return getNetflixCountriesFromUnogs(netflixId, token)
   })
   .catch(function(err) {
@@ -78,7 +83,7 @@ function requestUnogsToken() {
   })
   .catch((err) => {
     console.log('requestUnogsToken error');
-    console.err(err);
+    console.error(err);
   });
 
   return promise;
@@ -111,7 +116,43 @@ function processUnogsResponse(data) {
   return promise;
 }
 
-function getNetflixId(title, imdbId, token, callback) {
+function getNetflixId(title, imdbId, unogsToken) {
+  var baseUrl = "https://unogs.com/api/search";
+  var limit = 5;
+  var offset = 0;
+  var query = encodeURI(title);
+  var url = baseUrl + '?limit=' + limit + '&offset=' + offset + '&query=' + query;
+
+  var promise = fetch(url, {
+    method: 'GET',
+    headers: {
+      'authorization': 'Bearer ' + unogsToken,
+      'referrer': 'http://unogs.com',
+      'referer': 'https://unogs.com/',
+    }
+  })
+  .then(function(response) {
+    return response.json();
+  })
+  .catch((err) => {
+    console.log('requestUnogsToken error');
+    console.error(err);
+  });
+
+  return promise;
+}
+
+function processSearchResponse(data, imdbId) {
+  for (const searchResult in data) {
+    if (searchResult["imdbid"] == imdbId) {
+      return searchResult["nfid"];
+    }
+  }
+
+  throw new Error('IMDb entry not found in uNoGS search results');
+}
+
+function getNetflixIdCallback(title, imdbId, token, callback) {
   var baseUrl = "https://unogs.com/api/search";
   var limit = 5;
   var offset = 0;
@@ -137,7 +178,29 @@ function getNetflixId(title, imdbId, token, callback) {
   xhr.send();
 }
 
-function getNetflixCountriesFromUnogs(netflixId, token, callback) {
+function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
+  var baseUrl = "https://unogs.com/api/title/countries";
+  var url = baseUrl + '?netflixid=' + netflixId;
+
+  var promise = fetch(url, {
+    method: 'GET',
+    headers: {
+      'authorization': 'Bearer ' + unogsToken,
+    }
+  })
+  .then(function(response) {
+    return response.json();
+  })
+  .catch((err) => {
+    console.log('requestUnogsToken error');
+    console.error(err);
+  });
+
+  return promise;
+}
+
+
+function getNetflixCountriesFromUnogsCallback(netflixId, token, callback) {
   var xhr = new XMLHttpRequest();
   var baseUrl = "https://unogs.com/api/title/countries";
   var url = baseUrl + '?netflixid=' + netflixId;
