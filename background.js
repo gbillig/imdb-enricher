@@ -6,6 +6,12 @@ browser.runtime.onMessage.addListener(
   }
 );
 
+browser.webRequest.onBeforeSendHeaders.addListener(
+  addUnogsRefererHeader,
+  {urls: ["https://unogs.com/api/search*"]},
+  ["blocking", "requestHeaders", "extraHeaders"]
+);
+
 function getNetflixCountries(message, sender, response) {
   var token = null;
 
@@ -19,6 +25,9 @@ function getNetflixCountries(message, sender, response) {
   })
   .then(function(netflixId) {
     return getNetflixCountriesFromUnogs(netflixId, token)
+  })
+  .then(function(response) {
+    return processNetflixCountries(response);
   })
   .catch(function(err) {
     console.log('getNetflixCountries error');
@@ -128,7 +137,6 @@ function getNetflixId(title, imdbId, unogsToken) {
     headers: {
       'authorization': 'Bearer ' + unogsToken,
       'referrer': 'http://unogs.com',
-      'referer': 'https://unogs.com/',
     }
   })
   .then(function(response) {
@@ -142,40 +150,34 @@ function getNetflixId(title, imdbId, unogsToken) {
   return promise;
 }
 
-function processSearchResponse(data, imdbId) {
-  for (const searchResult in data) {
-    if (searchResult["imdbid"] == imdbId) {
-      return searchResult["nfid"];
+function addUnogsRefererHeader(e) {
+  foundReferer = false;
+  refererValue = 'https://unogs.com/';
+
+  for (var header of e.requestHeaders) {
+    if (header.name.toLowerCase() === "referer") {
+      header.value = refererValue;
+      foundReferer = true;
+      break;
     }
   }
 
-  throw new Error('IMDb entry not found in uNoGS search results');
+  if (!foundReferer) {
+    e.requestHeaders.push({name:"Referer", value:refererValue});
+  }
+
+  return {requestHeaders: e.requestHeaders};
 }
 
-function getNetflixIdCallback(title, imdbId, token, callback) {
-  var baseUrl = "https://unogs.com/api/search";
-  var limit = 5;
-  var offset = 0;
-  var query = encodeURI(title);
-  var url = baseUrl + '?limit=' + limit + '&offset=' + offset + '&query=' + query;
-
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-      searchResults = JSON.parse(xhr.responseText);
-      for (const searchResult in searchResults) {
-        if (searchResult["imdbid"] == imdbId) {
-          callback(searchResult["nfid"]);
-        }
-      }
+function processSearchResponse(data, imdbId) {
+for (const searchResult of data["results"]) {
+    if (searchResult.imdbid == imdbId) {
+      return searchResult.nfid;
     }
-  };
+  }
 
-  xhr.open('GET', url, true);
-  xhr.setRequestHeader('authorization', 'Bearer ' + token);
-  // xhr.setRequestHeader('referer', 'https://unogs.com') // weird uNoGS API requirement
-  xhr.setRequestHeader('referrer', 'http://unogs.com') // weird uNoGS API requirement
-  xhr.send();
+  return undefined;
+  //throw new Error('IMDb entry not found in uNoGS search results');
 }
 
 function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
@@ -199,21 +201,9 @@ function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
   return promise;
 }
 
+function processNetflixCountries(data) {
+  return data.map(x => x.cc);
 
-function getNetflixCountriesFromUnogsCallback(netflixId, token, callback) {
-  var xhr = new XMLHttpRequest();
-  var baseUrl = "https://unogs.com/api/title/countries";
-  var url = baseUrl + '?netflixid=' + netflixId;
-
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-      callback(JSON.parse(xhr.responseText));
-    }
-  };
-
-  xhr.open('GET', url, true);
-  xhr.setRequestHeader('authorization', 'Bearer ' + token);
-  xhr.send();
 }
 
 function isValidCredentials(credentials) {
