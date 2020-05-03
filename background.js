@@ -12,6 +12,9 @@ browser.webRequest.onBeforeSendHeaders.addListener(
   ["blocking", "requestHeaders", "extraHeaders"]
 );
 
+/*
+ * Retrieve the list of countries in which the film appears in the the Netflix catalogue.
+ */
 function getNetflixCountries(message, sender, response) {
   var token = null;
 
@@ -34,14 +37,12 @@ function getNetflixCountries(message, sender, response) {
     console.error(err);
   });
 
-  // getNetflixId(message.title, message.imdbId, getNetflixCountries)
-
   return promise;
 }
 
 /*
  * Get a valid uNoGS token:
- *   - first try to get a token from Storage.
+ *   - first try to get a token from Storage
  *   - otherwise fetch a new token from uNoGS
  */
 function getUnogsToken() {
@@ -98,6 +99,9 @@ function requestUnogsToken() {
   return promise;
 }
 
+/*
+ * Save the new token and it's expiration timestamp using the Storage API.
+ */
 function processUnogsResponse(data) {
   token = data["token"]["access_token"];
 
@@ -125,6 +129,9 @@ function processUnogsResponse(data) {
   return promise;
 }
 
+/*
+ * Search the uNoGS catalogue to find the Netflix ID that corresponds to the IMDb ID.
+ */
 function getNetflixId(title, imdbId, unogsToken) {
   var baseUrl = "https://unogs.com/api/search";
   var limit = 5;
@@ -150,6 +157,9 @@ function getNetflixId(title, imdbId, unogsToken) {
   return promise;
 }
 
+/*
+ * Add uNoGS referer header to search requests to make the request valid.
+ */
 function addUnogsRefererHeader(e) {
   foundReferer = false;
   refererValue = 'https://unogs.com/';
@@ -169,6 +179,9 @@ function addUnogsRefererHeader(e) {
   return {requestHeaders: e.requestHeaders};
 }
 
+/*
+ * Check whether any of the search results correspond to the IMDb entry.
+ */
 function processSearchResponse(data, imdbId) {
 for (const searchResult of data["results"]) {
     if (searchResult.imdbid == imdbId) {
@@ -180,6 +193,9 @@ for (const searchResult of data["results"]) {
   //throw new Error('IMDb entry not found in uNoGS search results');
 }
 
+/*
+ * Send a request to uNoGS to get the list of countries in which the film appears in the the Netflix catalogue
+ */
 function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
   var baseUrl = "https://unogs.com/api/title/countries";
   var url = baseUrl + '?netflixid=' + netflixId;
