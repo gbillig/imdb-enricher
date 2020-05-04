@@ -180,7 +180,11 @@ function getNetflixId(title, imdbId, unogsToken) {
  * Check whether any of the search results correspond to the IMDb entry.
  */
 function processSearchResponse(data, imdbId) {
-for (const searchResult of data["results"]) {
+  if (data["total"] == 0) {
+    return undefined;
+  }
+
+  for (const searchResult of data["results"]) {
     if (searchResult.imdbid == imdbId) {
       return searchResult.nfid;
     }
@@ -207,7 +211,11 @@ function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
     return response.json();
   })
   .then(function(response) {
-    response.map(x => x.cc);
+    if (isEmptyObject(response)) {
+      return null;
+    }
+
+    return response.map(x => x.cc);
   })
   .catch((err) => {
     console.log('requestUnogsToken error');
