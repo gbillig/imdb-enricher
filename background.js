@@ -13,6 +13,28 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 );
 
 /*
+ * Add uNoGS referer header to search requests to make the request valid.
+ */
+function addUnogsRefererHeader(e) {
+  foundReferer = false;
+  refererValue = 'https://unogs.com/';
+
+  for (var header of e.requestHeaders) {
+    if (header.name.toLowerCase() === "referer") {
+      header.value = refererValue;
+      foundReferer = true;
+      break;
+    }
+  }
+
+  if (!foundReferer) {
+    e.requestHeaders.push({name:"Referer", value:refererValue});
+  }
+
+  return {requestHeaders: e.requestHeaders};
+}
+
+/*
  * Retrieve the list of countries in which the film appears in the the Netflix catalogue.
  */
 function getNetflixCountries(message, sender, response) {
@@ -23,14 +45,8 @@ function getNetflixCountries(message, sender, response) {
     token = unogsToken;
     return getNetflixId(message.title, message.imdbId, token);
   })
-  .then(function(response) {
-    return processSearchResponse(response, message.imdbId);
-  })
   .then(function(netflixId) {
     return getNetflixCountriesFromUnogs(netflixId, token)
-  })
-  .then(function(response) {
-    return processNetflixCountries(response);
   })
   .catch(function(err) {
     console.log('getNetflixCountries error');
@@ -149,34 +165,15 @@ function getNetflixId(title, imdbId, unogsToken) {
   .then(function(response) {
     return response.json();
   })
+  .then(function(response) {
+    return processSearchResponse(response, imdbId);
+  })
   .catch((err) => {
     console.log('requestUnogsToken error');
     console.error(err);
   });
 
   return promise;
-}
-
-/*
- * Add uNoGS referer header to search requests to make the request valid.
- */
-function addUnogsRefererHeader(e) {
-  foundReferer = false;
-  refererValue = 'https://unogs.com/';
-
-  for (var header of e.requestHeaders) {
-    if (header.name.toLowerCase() === "referer") {
-      header.value = refererValue;
-      foundReferer = true;
-      break;
-    }
-  }
-
-  if (!foundReferer) {
-    e.requestHeaders.push({name:"Referer", value:refererValue});
-  }
-
-  return {requestHeaders: e.requestHeaders};
 }
 
 /*
@@ -209,17 +206,15 @@ function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
   .then(function(response) {
     return response.json();
   })
+  .then(function(response) {
+    response.map(x => x.cc);
+  })
   .catch((err) => {
     console.log('requestUnogsToken error');
     console.error(err);
   });
 
   return promise;
-}
-
-function processNetflixCountries(data) {
-  return data.map(x => x.cc);
-
 }
 
 function isValidCredentials(credentials) {
