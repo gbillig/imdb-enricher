@@ -1,5 +1,5 @@
-var filmographySection = $(".filmo-category-section")
-filmographySection.children().each(function (index) {
+var filmographyActorRows = $("div.filmo-row[id*='actor']")
+filmographyActorRows.each(function(index) {
   var yearElement = $(this).children("span");
   var year = yearElement.text();
   var filmElement = $(this).children("b").children("a");
