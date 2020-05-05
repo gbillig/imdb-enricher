@@ -1,7 +1,25 @@
 browser.runtime.onMessage.addListener(
   function(message, sender, response) {
-    if (message.action == "getNetflixCountries") {
-      return getNetflixCountries(message, sender, response);
+    if (message.action == "getImdbMetadata") {
+      var netflixCountries = getNetflixCountries(message.title, message.imdbId);
+      var imdbRating = getRatingImdb(message.imdbId);
+      var omdbRating = getRatingOmdb(message.imdbId, message.year);
+
+      var promise = Promise.all([netflixCountries, imdbRating, omdbRating])
+      .then(function(responses) {
+        metadata = {
+          countries: responses[0],
+          imdbRating: responses[1],
+          omdbRating: responses[2]
+        }
+
+        return metadata;
+      })
+      .catch(function(err) {
+        console.log('getImdbMetadata error');
+      });
+
+      return promise;
     }
   }
 );
@@ -37,13 +55,13 @@ function addUnogsRefererHeader(e) {
 /*
  * Retrieve the list of countries in which the film appears in the the Netflix catalogue.
  */
-function getNetflixCountries(message, sender, response) {
+function getNetflixCountries(title, imdbId) {
   var token = null;
 
   var promise = getUnogsToken()
   .then(function(unogsToken) {
     token = unogsToken;
-    return getNetflixId(message.title, message.imdbId, token);
+    return getNetflixId(title, imdbId, token);
   })
   .then(function(netflixId) {
     return getNetflixCountriesFromUnogs(netflixId, token)
@@ -223,6 +241,90 @@ function getNetflixCountriesFromUnogs(netflixId, unogsToken) {
   });
 
   return promise;
+}
+
+/*
+ * Get the mobile IMDb page and parse HTML to get the rating.
+ */
+function getRatingImdb(imdbId) {
+  var url = "https://m.imdb.com/title/" + imdbId + "/";
+
+  var promise = fetch(url)
+  .then(function(response) {
+    return response.text();
+  })
+  .then(function(response) {
+    return parseImdbPageForRating(response);
+  })
+  .catch(function(err) {
+    console.log('getRatingImdb error');
+    console.error(err);
+  });
+
+  return promise;
+}
+
+function parseImdbPageForRating(page) {
+  var parser = new DOMParser();
+  var imdbHtml = parser.parseFromString(page, "text/html");
+  var ratingElement = imdbHtml
+    .getElementById('ratings-bar')
+    .getElementsByClassName('text-center')[0]
+    .getElementsByClassName('vertically-middle')[0];
+  var outerText = ratingElement.outerText;
+  var rating = outerText.split('/')[0];
+
+  return rating;
+}
+
+/*
+ * Get film rating using the OMDb API.
+ * Note: the OMDb API was made private on May 9, 2017, and then subsequently was made public again on November 2, 2017.
+ */
+function getRatingOmdb(title, year) {
+  return null;
+
+  var omdbApiKey = 'ab272ca2'
+  var rating = null;
+
+  var titleRegex = new RegExp(' ', 'g');
+  encodedTitle = title.replace(titleRegex, "+");
+
+  var yearRegex = new RegExp(/\d\d\d\d/);
+  year = yearRegex.exec(year);
+  if (year != null) {
+    year = year[0];
+  } else {
+    year = "";
+  }
+
+  var baseUrl = 'https://www.omdbapi.com/';
+  var titleQueryParam = '?t=' + encodedTitle;
+  var yearQueryParam = '&y=' + year;
+  var formatQueryParam = '&plot=short&r=json';
+  var omdbApiKeyParam = '&apikey=' + omdbApiKey;
+  var url = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam;
+
+  var promise = fetch(url)
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(response) {
+    return reponse.imdbRating;
+  })
+  .catch(function(err) {
+    console.log('getRatingOmdb error');
+    console.error(err);
+  });
+
+  return promise;
+  /*
+  rating = data.imdbRating;
+
+  if (rating != null) {
+    element.html('<b>' + rating + '</b>\xa0' + year);
+  }
+  */
 }
 
 function isValidCredentials(credentials) {
