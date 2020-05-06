@@ -9,6 +9,7 @@
     "webRequestBlocking",
     "http://imdb.com/*",
     "https://imdb.com/*",
+    "https://m.imdb.com/*",
     "https://www.omdbapi.com/*",
     "http://unogs.com/*",
     "https://unogs.com/*"
