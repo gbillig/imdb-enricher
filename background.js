@@ -1,9 +1,15 @@
+browser.webRequest.onBeforeSendHeaders.addListener(
+  addUnogsRefererHeader,
+  {urls: ["https://unogs.com/api/search*"]},
+  ["blocking", "requestHeaders", "extraHeaders"]
+);
+
 browser.runtime.onMessage.addListener(
   function(message, sender, response) {
     if (message.action == "getImdbMetadata") {
       var netflixCountries = getNetflixCountries(message.title, message.imdbId);
       var imdbRating = getRatingImdb(message.imdbId);
-      var omdbRating = getRatingOmdb(message.imdbId, message.year);
+      var omdbRating = getRatingOmdb(message.imdbId, 'ab272ca2');
 
       var promise = Promise.all([netflixCountries, imdbRating, omdbRating])
       .then(function(responses) {
@@ -22,12 +28,6 @@ browser.runtime.onMessage.addListener(
       return promise;
     }
   }
-);
-
-browser.webRequest.onBeforeSendHeaders.addListener(
-  addUnogsRefererHeader,
-  {urls: ["https://unogs.com/api/search*"]},
-  ["blocking", "requestHeaders", "extraHeaders"]
 );
 
 /*
@@ -281,36 +281,22 @@ function parseImdbPageForRating(page) {
  * Get film rating using the OMDb API.
  * Note: the OMDb API was made private on May 9, 2017, and then subsequently was made public again on November 2, 2017.
  */
-function getRatingOmdb(title, year) {
-  return null;
-
-  var omdbApiKey = 'ab272ca2'
-  var rating = null;
-
+function getRatingOmdb(title, omdbApiKey) {
   var titleRegex = new RegExp(' ', 'g');
   encodedTitle = title.replace(titleRegex, "+");
 
-  var yearRegex = new RegExp(/\d\d\d\d/);
-  year = yearRegex.exec(year);
-  if (year != null) {
-    year = year[0];
-  } else {
-    year = "";
-  }
-
-  var baseUrl = 'https://www.omdbapi.com/';
-  var titleQueryParam = '?t=' + encodedTitle;
-  var yearQueryParam = '&y=' + year;
-  var formatQueryParam = '&plot=short&r=json';
-  var omdbApiKeyParam = '&apikey=' + omdbApiKey;
-  var url = baseUrl + titleQueryParam + yearQueryParam + formatQueryParam + omdbApiKeyParam;
-
+  var url = 'https://www.omdbapi.com/?i=' + encodedTitle + '&plot=short&r=json&apikey=' + omdbApiKey;
   var promise = fetch(url)
   .then(function(response) {
     return response.json();
   })
   .then(function(response) {
-    return reponse.imdbRating;
+    rating = response.imdbRating;
+    if (rating == 'N/A') {
+      rating = null;
+    }
+
+    return rating;
   })
   .catch(function(err) {
     console.log('getRatingOmdb error');
@@ -318,13 +304,6 @@ function getRatingOmdb(title, year) {
   });
 
   return promise;
-  /*
-  rating = data.imdbRating;
-
-  if (rating != null) {
-    element.html('<b>' + rating + '</b>\xa0' + year);
-  }
-  */
 }
 
 function isValidCredentials(credentials) {

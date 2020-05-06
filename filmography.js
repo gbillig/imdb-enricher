@@ -12,8 +12,7 @@ filmographyActorRows.each(function(index) {
   message = {
     action: "getImdbMetadata",
     imdbId: imdbId,
-    title: title,
-    year: year,
+    title: title
   }
 
   browser.runtime.sendMessage(message)
